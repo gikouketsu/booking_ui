@@ -306,115 +306,30 @@ function submitBooking() {
 
 <!DOCTYPE html>
 <html lang="zh">
-
 <head>
   <meta charset="UTF-8">
   <title>房间预订</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
-      margin: 0;
-      min-height: 100vh;
-      transition: background 0.5s ease;
-      background-size: cover;
-      background-position: center;
-    }
-
-    .container {
-      max-width: 420px;
-      margin: 50px auto;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-      background: rgba(255, 255, 255, 0.3);
-      backdrop-filter: blur(5px);
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #fff;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-      color: #fff;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-    }
-
-    select,
-    input {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background: #4CAF50;
-      color: white;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #45a049;
-    }
-
-    #result {
-      margin-top: 15px;
-      text-align: center;
-      font-weight: bold;
-      color: #2e7d32;
-    }
-
-    /* 日历样式 */
-    #calendar {
-      margin-top: 20px;
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      text-align: center;
-      background: rgba(255, 255, 255, 0.2);
-      padding: 10px;
-      border-radius: 6px;
-    }
-
-    #calendar div {
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.5);
-      border-radius: 4px;
-    }
-
-    #calendar .booked {
-      background: red;
-      color: white;
-      font-weight: bold;
-    }
+    body { font-family: Arial; padding:20px; margin:0; min-height:100vh; transition: background 0.5s; background-size:cover; background-position:center;}
+    .container { max-width:420px; margin:50px auto; padding:20px; border-radius:10px; background:rgba(255,255,255,0.3); backdrop-filter: blur(5px);}
+    h2 { text-align:center; color:#fff; text-shadow:1px 1px 2px rgba(0,0,0,0.7);}
+    .form-group {margin-bottom:15px;}
+    label {display:block; margin-bottom:6px; font-weight:bold; color:#fff; text-shadow:1px 1px 2px rgba(0,0,0,0.7);}
+    select,input {width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;}
+    button {width:100%; padding:10px; border:none; background:#4CAF50; color:white; font-size:16px; border-radius:6px; cursor:pointer;}
+    button:hover {background:#45a049;}
+    #result {margin-top:15px; text-align:center; font-weight:bold; color:#2e7d32;}
+    #calendar {margin-top:20px; display:grid; grid-template-columns:repeat(7,1fr); gap:5px; text-align:center; background:rgba(255,255,255,0.2); padding:10px; border-radius:6px;}
+    #calendar div {padding:10px; background:rgba(255,255,255,0.5); border-radius:4px;}
+    #calendar .booked {background:red; color:white; font-weight:bold;}
   </style>
 </head>
-
 <body>
   <div class="container">
     <h2>房间预订</h2>
-
     <div class="form-group">
       <label for="room">房间</label>
-      <select id="room" onchange="updateRoomBackground(); renderCalendar()">
+      <select id="room" onchange="updateRoomBackground(); fetchBookings();">
         <option value="">请选择房间</option>
         <option value="1001">1001号</option>
         <option value="1002">1002号</option>
@@ -422,17 +337,14 @@ function submitBooking() {
         <option value="1004">1004号</option>
       </select>
     </div>
-
     <div class="form-group">
       <label for="checkin">入住日期</label>
       <input type="date" id="checkin">
     </div>
-
     <div class="form-group">
       <label for="checkout">退房日期</label>
       <input type="date" id="checkout">
     </div>
-
     <div class="form-group">
       <label for="people">人数</label>
       <select id="people">
@@ -442,114 +354,104 @@ function submitBooking() {
         <option value="4">4人</option>
       </select>
     </div>
-
     <div class="form-group">
       <label for="name">姓名</label>
       <input type="text" id="name" placeholder="请输入姓名">
     </div>
-
     <button onclick="submitBooking()">提交订单</button>
     <div id="result"></div>
-
-    <!-- 日历显示 -->
     <div id="calendar"></div>
   </div>
 
-  <script>
-    const apiURL = "https://shrill-unit-bc8c.weizijie1218.workers.dev";
-    const roomImages = {
-      "1001": "https://gikouketsu.github.io/booking_ui/images/1001.jpg",
-      "1002": "https://gikouketsu.github.io/booking_ui/images/1002.jpg",
-      "1003": "https://gikouketsu.github.io/booking_ui/images/1003.jpg",
-      "1004": "https://gikouketsu.github.io/booking_ui/images/1004.jpg"
-    };
+<script>
+const apiURL = "https://shrill-unit-bc8c.weizijie1218.workers.dev";
+const roomImages = {
+  "1001":"https://gikouketsu.github.io/booking_ui/images/1001.png",
+  "1002":"https://gikouketsu.github.io/booking_ui/images/1002.png",
+  "1003":"https://gikouketsu.github.io/booking_ui/images/1003.png",
+  "1004":"https://gikouketsu.github.io/booking_ui/images/1004.png"
+};
 
-    // 模拟已预约数据（可以替换为 fetch 从服务器获取）
-    const bookings = {
-      "1001": [{ checkin: "2026-01-25", checkout: "2026-01-27" }],
-      "1002": [],
-      "1003": [],
-      "1004": []
-    };
+let bookings = {};
 
-    function updateRoomBackground() {
-      const room = document.getElementById("room").value;
-      const bgImage = roomImages[room] || "";
-      document.body.style.backgroundImage = bgImage ? `url(${bgImage})` : "";
-      document.body.style.backgroundSize = "cover";
-      document.body.style.backgroundPosition = "center";
-    }
+function updateRoomBackground(){
+  const room = document.getElementById("room").value;
+  const bg = roomImages[room] || "";
+  document.body.style.backgroundImage = bg ? `url(${bg})` : "";
+  document.body.style.backgroundSize="cover";
+  document.body.style.backgroundPosition="center";
+}
 
-    function submitBooking() {
-      const data = {
-        room: document.getElementById("room").value,
-        checkin: document.getElementById("checkin").value,
-        checkout: document.getElementById("checkout").value,
-        people: document.getElementById("people").value,
-        name: document.getElementById("name").value
-      };
+async function fetchBookings(){
+  const room = document.getElementById("room").value;
+  if(!room) return;
+  try{
+    const res = await fetch(apiURL);
+    const data = await res.json();
+    bookings = data;
+    renderCalendar();
+  }catch(e){
+    console.error("获取预约失败", e);
+  }
+}
 
-      if (!data.room || !data.checkin || !data.checkout || !data.name) {
-        alert("请填写完整信息！");
-        return;
-      }
+async function submitBooking(){
+  const data = {
+    room: document.getElementById("room").value,
+    checkin: document.getElementById("checkin").value,
+    checkout: document.getElementById("checkout").value,
+    people: document.getElementById("people").value,
+    name: document.getElementById("name").value
+  };
+  if(!data.room || !data.checkin || !data.checkout || !data.name){
+    alert("请填写完整信息！");
+    return;
+  }
 
-      // 添加到本地 bookings 模拟
-      if (!bookings[data.room]) bookings[data.room] = [];
-      bookings[data.room].push({ checkin: data.checkin, checkout: data.checkout });
-
+  try{
+    const res = await fetch(apiURL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(data)
+    });
+    const result = await res.json();
+    if(result.error){
+      alert("提交失败: " + result.error);
+    }else{
+      document.getElementById("result").innerText="预订成功！";
+      bookings = result.bookings;
       renderCalendar();
-
-      fetch(apiURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      })
-        .then(r => r.text())
-        .then(t => {
-          document.getElementById("result").innerText = "预订成功！";
-        })
-        .catch(e => {
-          console.error(e);
-          alert("提交失败");
-        });
     }
+  }catch(e){
+    console.error(e);
+    alert("提交失败: " + e.message);
+  }
+}
 
-    function renderCalendar() {
-      const room = document.getElementById("room").value;
-      const calendar = document.getElementById("calendar");
-      calendar.innerHTML = "";
+function renderCalendar(){
+  const room = document.getElementById("room").value;
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML="";
+  if(!room) return;
 
-      if (!room) return;
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const firstDay = new Date(year, month,1).getDay();
+  const lastDate = new Date(year, month+1,0).getDate();
 
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth(); // 0-11
-      const firstDay = new Date(year, month, 1).getDay();
-      const lastDate = new Date(year, month + 1, 0).getDate();
+  for(let i=0;i<firstDay;i++){ calendar.appendChild(document.createElement("div")); }
 
-      // 填充空白
-      for (let i = 0; i < firstDay; i++) {
-        const empty = document.createElement("div");
-        calendar.appendChild(empty);
-      }
-
-      // 填充日期
-      for (let d = 1; d <= lastDate; d++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-        const dayDiv = document.createElement("div");
-        dayDiv.innerText = d;
-
-        // 检查是否被预订
-        const roomBookings = bookings[room] || [];
-        if (roomBookings.some(b => dateStr >= b.checkin && dateStr <= b.checkout)) {
-          dayDiv.classList.add("booked");
-        }
-
-        calendar.appendChild(dayDiv);
-      }
-    }
-  </script>
+  for(let d=1; d<=lastDate; d++){
+    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const div = document.createElement("div");
+    div.innerText = d;
+    const roomBookings = bookings[room] || [];
+    if(roomBookings.some(b=>dateStr>=b.checkin && dateStr<=b.checkout)) div.classList.add("booked");
+    calendar.appendChild(div);
+  }
+}
+</script>
 </body>
-
 </html>
+
