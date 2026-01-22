@@ -311,8 +311,6 @@ function submitBooking() {
 
 
 
-
-
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -380,9 +378,8 @@ button:hover { background:#45a049;}
 </div>
 
 <script>
-const googleSheetURL = "https://script.google.com/macros/s/AKfycbw1aUJ0eYPzn762eLW4ZVdNJg-Etj96IXEcQAKpu5fTvMqrrhd0k55Q3uu6xqBxa0135w/exec"; // 替换成你的 Apps Script Web App URL
+const googleSheetURL = "https://script.google.com/macros/s/AKfycbytPiQOgttxlr_b5RN0wpwTz-r345Biei8NMc49Eqo_0FkpumalBu_PbM05PyL_EjWT/exec"; // <-- 替换成你的 Google Apps Script Web App URL
 
-// 提交订单
 async function submitBooking(){
   const data = {
     room: document.getElementById("room").value,
@@ -391,7 +388,6 @@ async function submitBooking(){
     people: document.getElementById("people").value,
     name: document.getElementById("name").value
   };
-
   if(!data.room || !data.start || !data.end || !data.name){
     alert("请填写完整信息！");
     return;
@@ -407,7 +403,7 @@ async function submitBooking(){
     if(result.success){
       document.getElementById("result").innerText = `提交成功，总金额: ${result.total}`;
       loadBookings();
-    } else {
+    }else{
       document.getElementById("result").innerText = "提交失败";
     }
   }catch(e){
@@ -415,7 +411,6 @@ async function submitBooking(){
   }
 }
 
-// 获取历史预订并渲染日历
 async function loadBookings(){
   const room = document.getElementById("room").value;
   const calendar = document.getElementById("calendar");
@@ -425,9 +420,9 @@ async function loadBookings(){
   try{
     const res = await fetch(googleSheetURL);
     const bookings = await res.json();
-    
-    const roomKey = room.replace("号",""); // 去掉“号”，和 doGet 对应
-    if(!bookings[roomKey]) return; // 防止 undefined
+
+    const roomKey = room.replace("号",""); // 去掉“号”，和 doGet key 对应
+    if(!bookings[roomKey]) return;
 
     bookings[roomKey].forEach(b=>{
       const start = new Date(b.start);
