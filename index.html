@@ -305,13 +305,22 @@ function submitBooking() {
 
 
 
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
 <title>房间预订</title>
 <style>
-body { font-family: Arial; background:#f5f5f5; padding:20px; margin:0; min-height:100vh; }
+body { font-family: Arial; background:#f5f5f5; padding:20px; margin:0; min-height:100vh;}
 .container { max-width:420px; margin:50px auto; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.15); background:rgba(255,255,255,0.3); backdrop-filter:blur(5px);}
 h2 { text-align:center; margin-bottom:20px;}
 .form-group { margin-bottom:15px;}
@@ -372,7 +381,7 @@ button:hover { background:#45a049;}
 </div>
 
 <script>
-const googleSheetURL = "https://script.google.com/macros/s/AKfycbwIYDYfnFw-JTDWVmLqgZMkSewJOkWhEydeXZwDG1HylzEELsv8tP5uabHkRteGOFyJYg/exec";
+const googleSheetURL = "你的WebAppURL替换这里"; // 替换成你的 Apps Script Web App URL
 
 // 提交订单
 async function submitBooking(){
@@ -398,7 +407,7 @@ async function submitBooking(){
     const result = await res.json();
     if(result.success){
       document.getElementById("result").innerText = `提交成功，总金额: ${result.total}`;
-      loadBookings(); // 刷新日历
+      loadBookings();
     } else {
       document.getElementById("result").innerText = "提交失败";
     }
@@ -417,9 +426,10 @@ async function loadBookings(){
   try{
     const res = await fetch(googleSheetURL);
     const bookings = await res.json();
-    if(!bookings[room]) return;
+    const roomKey = room.toString(); // 对应doGet里 key
+    if(!bookings[roomKey]) return;
 
-    bookings[room].forEach(b=>{
+    bookings[roomKey].forEach(b=>{
       const start = new Date(b.start);
       const end = new Date(b.end);
       for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
@@ -437,4 +447,3 @@ async function loadBookings(){
 </script>
 </body>
 </html>
-
