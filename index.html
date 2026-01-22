@@ -119,6 +119,9 @@ function submitBooking() {
 
 
 
+
+
+
 <!DOCTYPE html>
 <html lang="zh">
 
@@ -268,21 +271,16 @@ function submitBooking() {
     // 提交订单
     function submitBooking() {
       const data = {
-      room: document.getElementById("room").value,
-      checkin: document.getElementById("checkin").value,
-      checkout: document.getElementById("checkout").value,
-      people: document.getElementById("people").value,
-      name: document.getElementById("name").value
-    };
-  
-    if (!data.room || !data.checkin || !data.checkout || !data.name) {
-      alert("请填写完整信息！");
-      return;
-  }
+        room: document.getElementById("room").value,
+        checkin: document.getElementById("checkin").value,
+        checkout: document.getElementById("checkout").value,
+        people: document.getElementById("people").value,
+        name: document.getElementById("name").value
+      };
 
-  // 🔹 这里模拟成功提交，不用 Worker
-  console.log("提交的数据：", data);
-  document.getElementById("result").innerText = "预订成功！";
+      if (!data.room || !data.checkin || !data.checkout || !data.name) {
+        alert("请填写完整信息！");
+        return;
       }
 
       fetch(apiURL, {
