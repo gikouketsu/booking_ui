@@ -61,7 +61,7 @@ input[disabled]{background:#f5cccc}
 </div>
 
 <script>
-const apiURL = "https://script.google.com/macros/s/AKfycbwjqBq0AVfxS_mGzkUB2xBTW-M6zLsRCNmA9qKXjErgGZ5WY-ocYwo4XVMEwqS6KqdXyg/exec"; // 替换为你的 Apps Script URL
+const apiURL = "https://script.google.com/macros/s/AKfycbxtmrHIEvbnq28Eiq9fQTtwyzaYqaOmDqCKBHyTxswu-F3eb8_aPLamWg8ykmbbdPCrRg/exec"; // 替换为你部署的 Apps Script URL
 let bookedDates = [];
 
 function formatDate(d){ return d.toISOString().slice(0,10); }
@@ -72,32 +72,6 @@ async function loadBookedDates(){
   const res = await fetch(apiURL + "?room=" + room);
   const data = await res.json();
   bookedDates = data.bookedDates || [];
-
-  // 设置禁用日期
-  const checkin = document.getElementById("checkin");
-  const checkout = document.getElementById("checkout");
-  
-  checkin.addEventListener("input", validateDates);
-  checkout.addEventListener("input", validateDates);
-}
-
-function validateDates(){
-  const checkin = document.getElementById("checkin");
-  const checkout = document.getElementById("checkout");
-  
-  if(bookedDates.includes(checkin.value)){
-    checkin.setCustomValidity("该日期已被预约");
-    checkin.reportValidity();
-  }else{
-    checkin.setCustomValidity("");
-  }
-
-  if(bookedDates.includes(checkout.value)){
-    checkout.setCustomValidity("该日期已被预约");
-    checkout.reportValidity();
-  }else{
-    checkout.setCustomValidity("");
-  }
 }
 
 async function submitBooking(){
@@ -109,7 +83,6 @@ async function submitBooking(){
 
   if(!room || !start || !end || !name){ alert("请填写完整信息"); return; }
 
-  // 检查日期冲突
   let s = new Date(start), e = new Date(end);
   while(s <= e){
     if(bookedDates.includes(formatDate(s))){
