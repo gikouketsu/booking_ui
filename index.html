@@ -1,4 +1,4 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
@@ -13,16 +13,15 @@
   button { width:100%; padding:10px; border:none; background:#4CAF50; color:white; font-size:16px; border-radius:6px; cursor:pointer; }
   button:hover { background:#45a049; }
   #result { margin-top:15px; text-align:center; font-weight:bold; color:#2e7d32; }
-  #roomPreview { margin-top:10px; text-align:center; display:none; }
-  #roomPreview img { width:100%; max-width:360px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
 </style>
 </head>
 <body>
 <div class="container">
   <h2>房间预订</h2>
+  
   <div class="form-group">
     <label for="room">房间</label>
-    <select id="room" onchange="updateRoomImage()">
+    <select id="room" onchange="fetchBookedDates()">
       <option value="">请选择房间</option>
       <option value="1001">1001号</option>
       <option value="1002">1002号</option>
@@ -32,15 +31,6 @@
   </div>
 
   <div class="form-group">
-    <label><input type="checkbox" id="showImage" onchange="toggleRoomImage()"> 查看房间图片</label>
-  </div>
-
-  <div id="roomPreview">
-    <p>房间图片预览</p>
-    <img id="roomImage" src="" alt="房间图片">
-  </div>
-
-  <div class="form-group">
     <label for="checkin">入住日期</label>
     <input type="date" id="checkin">
   </div>
@@ -70,35 +60,69 @@
 </div>
 
 <script>
-const apiURL = "https://orange-silence-6c7f.weizijie1218.workers.dev";  // Worker URL
-const roomImages = {
-  "1001":"https://gikouketsu.github.io/booking_ui/images/1001.png",
-  "1002":"https://gikouketsu.github.io/booking_ui/images/1002.png",
-  "1003":"https://gikouketsu.github.io/booking_ui/images/1003.png",
-  "1004":"https://gikouketsu.github.io/booking_ui/images/1004.png"
-};
+const apiURL = "https://script.google.com/macros/s/AKfycbwxf1C7WZs7gwBdwK9DcSBaim3mZhtZX4eu9BSGJ7BoaHxQsBYDEBQtfRhjGfq2bFazmg/exec"; // 替换成你的 Apps Script Web App URL
+let bookedDates = [];
 
-function updateRoomImage() {
+// 获取已预约日期
+function fetchBookedDates() {
   const room = document.getElementById("room").value;
-  document.getElementById("roomImage").src = roomImages[room] || "";
+  if(!room) return;
+
+  fetch(`${apiURL}?room=${room}`)
+    .then(r => r.json())
+    .then(data => {
+      bookedDates = data.bookedDates || [];
+      markBookedDates();
+    });
 }
 
-function toggleRoomImage() {
-  const preview = document.getElementById("roomPreview");
-  preview.style.display = document.getElementById("showImage").checked ? "block" : "none";
-  updateRoomImage();
+// 标记不可选日期
+function markBookedDates() {
+  const checkin = document.getElementById("checkin");
+  const checkout = document.getElementById("checkout");
+
+  checkin.addEventListener("input", validateDates);
+  checkout.addEventListener("input", validateDates);
 }
 
+// 检查用户选的日期
+function validateDates() {
+  const checkin = document.getElementById("checkin");
+  const checkout = document.getElementById("checkout");
+  let ci = new Date(checkin.value);
+  let co = new Date(checkout.value);
+
+  if(ci > co) {
+    alert("退房日期不能早于入住日期");
+    checkout.value = "";
+    return;
+  }
+
+  // 遍历选择的日期，如果被预约则提示
+  let current = new Date(ci);
+  while(current <= co) {
+    let str = current.toISOString().slice(0,10);
+    if(bookedDates.includes(str)) {
+      alert(`日期 ${str} 已被预约，请选择其他日期`);
+      checkin.value = "";
+      checkout.value = "";
+      break;
+    }
+    current.setDate(current.getDate()+1);
+  }
+}
+
+// 提交预订
 function submitBooking() {
   const data = {
     room: document.getElementById("room").value,
-    checkin: document.getElementById("checkin").value,
-    checkout: document.getElementById("checkout").value,
+    start: document.getElementById("checkin").value,
+    end: document.getElementById("checkout").value,
     people: document.getElementById("people").value,
     name: document.getElementById("name").value
   };
 
-  if(!data.room || !data.checkin || !data.checkout || !data.name){
+  if(!data.room || !data.start || !data.end || !data.name){
     alert("请填写完整信息！");
     return;
   }
@@ -108,336 +132,13 @@ function submitBooking() {
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify(data)
   })
-  .then(r=>r.text())
-  .then(t=>{ document.getElementById("result").innerText="预订成功！" })
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.success) document.getElementById("result").innerText=`预订成功，总价: ${res.total} 元`;
+    else alert(res.msg);
+    fetchBookedDates(); // 更新已预约日期
+  })
   .catch(e=>{ console.error(e); alert("提交失败") });
-}
-</script>
-</body>
-</html> -->
-
-
-
-
-
-<!-- 
-
-<!DOCTYPE html>
-<html lang="zh">
-
-<head>
-  <meta charset="UTF-8">
-  <title>房间预订</title>
-  <style>
-    /* 网页整体样式 */
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
-      margin: 0;
-      min-height: 100vh;
-      transition: background 0.5s ease;
-      background-size: cover;
-      background-position: center;
-    }
-
-    /* 容器表单 */
-    .container {
-      max-width: 420px;
-      margin: 50px auto;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-      
-      /* 半透明 + 模糊，让文字在背景上清晰 */
-      background: rgba(255, 255, 255, 0.3);
-      backdrop-filter: blur(5px);
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #fff;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-      color: #fff;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-    }
-
-    select,
-    input {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background: #4CAF50;
-      color: white;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #45a049;
-    }
-
-    #result {
-      margin-top: 15px;
-      text-align: center;
-      font-weight: bold;
-      color: #2e7d32;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <h2>房间预订</h2>
-
-    <div class="form-group">
-      <label for="room">房间</label>
-      <select id="room" onchange="updateRoomBackground()">
-        <option value="">请选择房间</option>
-        <option value="1001">1001号</option>
-        <option value="1002">1002号</option>
-        <option value="1003">1003号</option>
-        <option value="1004">1004号</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="checkin">入住日期</label>
-      <input type="date" id="checkin">
-    </div>
-
-    <div class="form-group">
-      <label for="checkout">退房日期</label>
-      <input type="date" id="checkout">
-    </div>
-
-    <div class="form-group">
-      <label for="people">人数</label>
-      <select id="people">
-        <option value="1">1人</option>
-        <option value="2">2人</option>
-        <option value="3">3人</option>
-        <option value="4">4人</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="name">姓名</label>
-      <input type="text" id="name" placeholder="请输入姓名">
-    </div>
-
-    <button onclick="submitBooking()">提交订单</button>
-    <div id="result"></div>
-  </div>
-
-  <script>
-    const apiURL = "https://orange-silence-6c7f.weizijie1218.workers.dev";
-    const roomImages = {
-      "1001": "https://gikouketsu.github.io/booking_ui/images/1001.jpg",
-      "1002": "https://gikouketsu.github.io/booking_ui/images/1002.jpg",
-      "1003": "https://gikouketsu.github.io/booking_ui/images/1003.jpg",
-      "1004": "https://gikouketsu.github.io/booking_ui/images/1004.jpg"
-    };
-
-    // 选房间时更新整个网页背景
-    function updateRoomBackground() {
-      const room = document.getElementById("room").value;
-      const bgImage = roomImages[room] || "";
-      document.body.style.backgroundImage = bgImage ? `url(${bgImage})` : "";
-      document.body.style.backgroundSize = "cover";
-      document.body.style.backgroundPosition = "center";
-    }
-
-    // 提交订单
-    function submitBooking() {
-      const data = {
-        room: document.getElementById("room").value,
-        checkin: document.getElementById("checkin").value,
-        checkout: document.getElementById("checkout").value,
-        people: document.getElementById("people").value,
-        name: document.getElementById("name").value
-      };
-
-      if (!data.room || !data.checkin || !data.checkout || !data.name) {
-        alert("请填写完整信息！");
-        return;
-      }
-
-      fetch(apiURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      })
-        .then(r => r.text())
-        .then(t => { document.getElementById("result").innerText = "预订成功！" })
-        .catch(e => { console.error(e); alert("提交失败") });
-    }
-  </script>
-</body>
-
-</html> -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-<meta charset="UTF-8">
-<title>房间预订</title>
-<style>
-body { font-family: Arial; background:#f5f5f5; padding:20px; margin:0; min-height:100vh;}
-.container { max-width:420px; margin:50px auto; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.15); background:rgba(255,255,255,0.3); backdrop-filter:blur(5px);}
-h2 { text-align:center; margin-bottom:20px;}
-.form-group { margin-bottom:15px;}
-label { display:block; margin-bottom:6px; font-weight:bold;}
-select,input { width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;}
-button { width:100%; padding:10px; border:none; background:#4CAF50; color:white; font-size:16px; border-radius:6px; cursor:pointer;}
-button:hover { background:#45a049;}
-#result { margin-top:15px; text-align:center; font-weight:bold;}
-.calendar { display:flex; flex-wrap:wrap; gap:5px; margin-top:20px;}
-.day { width:40px; height:40px; line-height:40px; text-align:center; border:1px solid #ccc; border-radius:4px;}
-.booked { background:red; color:#fff;}
-</style>
-</head>
-<body>
-<div class="container">
-  <h2>房间预订</h2>
-
-  <div class="form-group">
-    <label for="room">房间</label>
-    <select id="room" onchange="loadBookings()">
-      <option value="">请选择房间</option>
-      <option value="1001号">1001号</option>
-      <option value="1002号">1002号</option>
-      <option value="1003号">1003号</option>
-      <option value="1004号">1004号</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label for="checkin">入住日期</label>
-    <input type="date" id="checkin">
-  </div>
-
-  <div class="form-group">
-    <label for="checkout">退房日期</label>
-    <input type="date" id="checkout">
-  </div>
-
-  <div class="form-group">
-    <label for="people">人数</label>
-    <select id="people">
-      <option value="1">1人</option>
-      <option value="2">2人</option>
-      <option value="3">3人</option>
-      <option value="4">4人</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label for="name">姓名</label>
-    <input type="text" id="name" placeholder="请输入姓名">
-  </div>
-
-  <button onclick="submitBooking()">提交订单</button>
-  <div id="result"></div>
-
-  <div class="calendar" id="calendar"></div>
-</div>
-
-<script>
-const googleSheetURL = "https://script.google.com/macros/s/AKfycbytPiQOgttxlr_b5RN0wpwTz-r345Biei8NMc49Eqo_0FkpumalBu_PbM05PyL_EjWT/exec"; // <-- 替换成你的 Google Apps Script Web App URL
-
-async function submitBooking(){
-  const data = {
-    room: document.getElementById("room").value,
-    start: document.getElementById("checkin").value,
-    end: document.getElementById("checkout").value,
-    people: document.getElementById("people").value,
-    name: document.getElementById("name").value
-  };
-  if(!data.room || !data.start || !data.end || !data.name){
-    alert("请填写完整信息！");
-    return;
-  }
-
-  try{
-    const res = await fetch(googleSheetURL, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if(result.success){
-      document.getElementById("result").innerText = `提交成功，总金额: ${result.total}`;
-      loadBookings();
-    }else{
-      document.getElementById("result").innerText = "提交失败";
-    }
-  }catch(e){
-    alert("提交失败: " + e.message);
-  }
-}
-
-async function loadBookings(){
-  const room = document.getElementById("room").value;
-  const calendar = document.getElementById("calendar");
-  calendar.innerHTML = "";
-  if(!room) return;
-
-  try{
-    const res = await fetch(googleSheetURL);
-    const bookings = await res.json();
-
-    const roomKey = room.replace("号",""); // 去掉“号”，和 doGet key 对应
-    if(!bookings[roomKey]) return;
-
-    bookings[roomKey].forEach(b=>{
-      const start = new Date(b.start);
-      const end = new Date(b.end);
-      for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
-        const div = document.createElement("div");
-        div.className = "day booked";
-        div.innerText = d.getDate();
-        calendar.appendChild(div);
-      }
-    });
-
-  }catch(e){
-    console.error(e);
-  }
 }
 </script>
 </body>
