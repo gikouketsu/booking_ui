@@ -2,10 +2,10 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>房间预订系统</title>
+<title>房间预订</title>
 <style>
 body{font-family:Arial;background:#f5f5f5;padding:20px}
-.container{max-width:800px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.15)}
+.container{max-width:500px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.15)}
 h2{text-align:center;margin-bottom:20px}
 .form-group{margin-bottom:15px}
 label{display:block;margin-bottom:6px;font-weight:bold}
@@ -13,18 +13,16 @@ select,input{width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;font
 button{width:100%;padding:10px;border:none;background:#4CAF50;color:white;font-size:16px;border-radius:6px;cursor:pointer}
 button:hover{background:#45a049}
 #result{text-align:center;font-weight:bold;color:#2e7d32;margin-top:15px}
-table{width:100%;border-collapse:collapse;margin-top:20px}
-th,td{border:1px solid #ccc;padding:8px;text-align:center}
-th{background:#eee}
+input[disabled]{background:#f5cccc}
 </style>
 </head>
 <body>
 <div class="container">
-<h2>房间预订系统</h2>
+<h2>房间预订</h2>
 
 <div class="form-group">
 <label for="room">房间</label>
-<select id="room" onchange="loadBookedData()">
+<select id="room" onchange="loadBookedDates()">
 <option value="">请选择房间</option>
 <option value="1001号">1001号</option>
 <option value="1002号">1002号</option>
@@ -60,58 +58,61 @@ th{background:#eee}
 
 <button onclick="submitBooking()">提交订单</button>
 <div id="result"></div>
-
-<h3>房间已预订记录</h3>
-<table id="bookingTable">
-<tr>
-<th>提交时间</th><th>房间</th><th>入住日期</th><th>退房日期</th>
-<th>天数</th><th>人数</th><th>日价</th><th>总价</th><th>姓名</th>
-</tr>
-</table>
-
 </div>
 
 <script>
-const apiURL = "https://script.google.com/macros/s/AKfycbxv-dLcCnegusqGunPRiLz2jdX-VRfTlJX37RwPut8SNKi00kZ411H07YDJyt_Kgr4bJA/exec"; // 替换成你的 Web 应用 URL
+const apiURL = "https://script.google.com/macros/s/AKfycbwjqBq0AVfxS_mGzkUB2xBTW-M6zLsRCNmA9qKXjErgGZ5WY-ocYwo4XVMEwqS6KqdXyg/exec"; // 替换为你的 Apps Script URL
 let bookedDates = [];
 
-function formatDate(d){return d.toISOString().slice(0,10)}
+function formatDate(d){ return d.toISOString().slice(0,10); }
 
-async function loadBookedData(){
+async function loadBookedDates(){
   const room = document.getElementById("room").value;
   if(!room) return;
   const res = await fetch(apiURL + "?room=" + room);
   const data = await res.json();
   bookedDates = data.bookedDates || [];
-  const table = document.getElementById("bookingTable");
-  table.innerHTML = `<tr>
-<th>提交时间</th><th>房间</th><th>入住日期</th><th>退房日期</th>
-<th>天数</th><th>人数</th><th>日价</th><th>总价</th><th>姓名</th>
-</tr>`;
+
+  // 设置禁用日期
+  const checkin = document.getElementById("checkin");
+  const checkout = document.getElementById("checkout");
   
-  (data.bookings || []).forEach(item=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${new Date(item[0]).toLocaleString()}</td>
-<td>${item[1]}</td><td>${item[2]}</td><td>${item[3]}</td>
-<td>${item[4]}</td><td>${item[5]}</td><td>${item[6]}</td><td>${item[7]}</td><td>${item[8]}</td>`;
-    table.appendChild(tr);
-  });
+  checkin.addEventListener("input", validateDates);
+  checkout.addEventListener("input", validateDates);
 }
 
-function isDateBooked(d){return bookedDates.includes(d)}
+function validateDates(){
+  const checkin = document.getElementById("checkin");
+  const checkout = document.getElementById("checkout");
+  
+  if(bookedDates.includes(checkin.value)){
+    checkin.setCustomValidity("该日期已被预约");
+    checkin.reportValidity();
+  }else{
+    checkin.setCustomValidity("");
+  }
+
+  if(bookedDates.includes(checkout.value)){
+    checkout.setCustomValidity("该日期已被预约");
+    checkout.reportValidity();
+  }else{
+    checkout.setCustomValidity("");
+  }
+}
 
 async function submitBooking(){
-  const room=document.getElementById("room").value;
-  const start=document.getElementById("checkin").value;
-  const end=document.getElementById("checkout").value;
-  const people=document.getElementById("people").value;
-  const name=document.getElementById("name").value;
+  const room = document.getElementById("room").value;
+  const start = document.getElementById("checkin").value;
+  const end = document.getElementById("checkout").value;
+  const people = document.getElementById("people").value;
+  const name = document.getElementById("name").value;
 
-  if(!room||!start||!end||!name){ alert("请填写完整信息"); return; }
+  if(!room || !start || !end || !name){ alert("请填写完整信息"); return; }
 
-  let s=new Date(start), e=new Date(end);
-  while(s<=e){
-    if(isDateBooked(formatDate(s))){
+  // 检查日期冲突
+  let s = new Date(start), e = new Date(end);
+  while(s <= e){
+    if(bookedDates.includes(formatDate(s))){
       alert("日期已被预约，请选择其他日期");
       return;
     }
@@ -127,7 +128,7 @@ async function submitBooking(){
     const result = await res.json();
     if(result.success){
       document.getElementById("result").innerText="预订成功！";
-      loadBookedData();
+      loadBookedDates(); // 更新禁用日期
     }else{
       alert("提交失败：" + (result.msg || "未知错误"));
     }
