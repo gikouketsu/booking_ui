@@ -4,133 +4,164 @@
 <meta charset="UTF-8">
 <title>房间预订系统</title>
 <style>
-  body { font-family: Arial; background:#f5f5f5; padding:20px; }
-  .container { max-width:420px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.15); }
-  h2 { text-align:center; margin-bottom:20px; }
-  .form-group { margin-bottom:15px; }
-  label { display:block; margin-bottom:6px; font-weight:bold; }
-  select,input { width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px; }
-  button { width:100%; padding:10px; border:none; background:#4CAF50; color:white; font-size:16px; border-radius:6px; cursor:pointer; }
-  button:hover { background:#45a049; }
-  #result { margin-top:15px; text-align:center; font-weight:bold; color:#2e7d32; }
-  #roomPreview { margin-top:10px; text-align:center; display:none; }
-  #roomPreview img { width:100%; max-width:360px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
-  .disabled-date { background:red !important; color:white; }
+body{font-family:Arial;background:#f5f5f5;padding:20px}
+.container{max-width:800px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.15)}
+h2{text-align:center;margin-bottom:20px}
+.form-group{margin-bottom:15px}
+label{display:block;margin-bottom:6px;font-weight:bold}
+select,input{width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;font-size:14px}
+button{width:100%;padding:10px;border:none;background:#4CAF50;color:white;font-size:16px;border-radius:6px;cursor:pointer}
+button:hover{background:#45a049}
+#result{text-align:center;font-weight:bold;color:#2e7d32;margin-top:15px}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{border:1px solid #ccc;padding:8px;text-align:center}
+th{background:#eee}
 </style>
 </head>
 <body>
 <div class="container">
-  <h2>房间预订</h2>
+<h2>房间预订系统</h2>
 
-  <div class="form-group">
-    <label for="room">房间</label>
-    <select id="room" onchange="fetchBookedDates()">
-      <option value="">请选择房间</option>
-      <option value="1001号">1001号</option>
-      <option value="1002号">1002号</option>
-      <option value="1003号">1003号</option>
-      <option value="1004号">1004号</option>
-    </select>
-  </div>
+<div class="form-group">
+<label for="room">房间</label>
+<select id="room" onchange="loadBookedData()">
+<option value="">请选择房间</option>
+<option value="1001号">1001号</option>
+<option value="1002号">1002号</option>
+<option value="1003号">1003号</option>
+<option value="1004号">1004号</option>
+</select>
+</div>
 
-  <div class="form-group">
-    <label for="checkin">入住日期</label>
-    <input type="date" id="checkin">
-  </div>
+<div class="form-group">
+<label for="checkin">入住日期</label>
+<input type="date" id="checkin">
+</div>
 
-  <div class="form-group">
-    <label for="checkout">退房日期</label>
-    <input type="date" id="checkout">
-  </div>
+<div class="form-group">
+<label for="checkout">退房日期</label>
+<input type="date" id="checkout">
+</div>
 
-  <div class="form-group">
-    <label for="people">人数</label>
-    <select id="people">
-      <option value="1">1人</option>
-      <option value="2">2人</option>
-      <option value="3">3人</option>
-      <option value="4">4人</option>
-    </select>
-  </div>
+<div class="form-group">
+<label for="people">人数</label>
+<select id="people">
+<option value="1">1人</option>
+<option value="2">2人</option>
+<option value="3">3人</option>
+<option value="4">4人</option>
+</select>
+</div>
 
-  <div class="form-group">
-    <label for="name">姓名</label>
-    <input type="text" id="name" placeholder="请输入姓名">
-  </div>
+<div class="form-group">
+<label for="name">姓名</label>
+<input type="text" id="name" placeholder="请输入姓名">
+</div>
 
-  <button onclick="submitBooking()">提交订单</button>
-  <div id="result"></div>
+<button onclick="submitBooking()">提交订单</button>
+<div id="result"></div>
+
+<h3>房间已预订记录</h3>
+<table id="bookingTable">
+<tr>
+<th>提交时间</th>
+<th>房间</th>
+<th>入住日期</th>
+<th>退房日期</th>
+<th>天数</th>
+<th>人数</th>
+<th>日价</th>
+<th>总价</th>
+<th>姓名</th>
+</tr>
+</table>
+
 </div>
 
 <script>
-const apiURL = "https://shrill-unit-bc8c.weizijie1218.workers.dev/"; // 替换成你的 Worker KV URL
+const apiURL = "https://shrill-unit-bc8c.weizijie1218.workers.dev/";
 let bookedDates = [];
 
-// 获取已预约日期
-async function fetchBookedDates() {
+function formatDate(d){return d.toISOString().slice(0,10)}
+
+async function loadBookedData(){
   const room = document.getElementById("room").value;
   if(!room) return;
-  const res = await fetch(`${apiURL}?room=${encodeURIComponent(room)}`);
+  const res = await fetch(apiURL);
   const data = await res.json();
-  bookedDates = data.bookedDates || [];
-  markDisabledDates();
-}
+  const arr = data[room.replace("号","")] || [];
 
-// 禁用已预约日期
-function markDisabledDates() {
-  const checkin = document.getElementById("checkin");
-  const checkout = document.getElementById("checkout");
+  bookedDates = [];
+  const table = document.getElementById("bookingTable");
+  table.innerHTML = `<tr>
+<th>提交时间</th><th>房间</th><th>入住日期</th><th>退房日期</th>
+<th>天数</th><th>人数</th><th>日价</th><th>总价</th><th>姓名</th>
+</tr>`;
 
-  // 简单实现：用户选择时阻止提交，如果日期已被预订
-  [checkin, checkout].forEach(input=>{
-    input.addEventListener('change', ()=>{
-      if(bookedDates.includes(input.value)){
-        alert("该日期已被预订，请选择其他日期");
-        input.value = "";
-      }
-    });
+  arr.forEach(item=>{
+    let s=new Date(item.start), e=new Date(item.end);
+    let days = Math.ceil((e-s)/(1000*60*60*24));
+    if(days <= 0) days=1;
+
+    // 计算日价
+    let price=300;
+    if(days>=30) price=253;
+    else if(days>=7) price=265;
+    else if(days>=3) price=275;
+    let total = days*price;
+
+    // 填充 bookedDates
+    while(s<=e){
+      bookedDates.push(formatDate(s));
+      s.setDate(s.getDate()+1);
+    }
+
+    // 填充表格
+    const tr = document.createElement("tr");
+    const now = formatDate(new Date());
+    tr.innerHTML=`<td>${now}</td>
+<td>${item.room}</td><td>${item.start}</td><td>${item.end}</td>
+<td>${days}</td><td>${item.people}</td><td>${price}</td><td>${total}</td><td>${item.name}</td>`;
+    table.appendChild(tr);
   });
 }
 
-// 提交订单
-async function submitBooking() {
-  const room = document.getElementById("room").value;
-  const start = document.getElementById("checkin").value;
-  const end = document.getElementById("checkout").value;
-  const people = document.getElementById("people").value;
-  const name = document.getElementById("name").value;
+function isDateBooked(d){return bookedDates.includes(d)}
 
-  if(!room || !start || !end || !name){
-    alert("请填写完整信息！");
-    return;
-  }
+async function submitBooking(){
+  const room=document.getElementById("room").value;
+  const start=document.getElementById("checkin").value;
+  const end=document.getElementById("checkout").value;
+  const people=document.getElementById("people").value;
+  const name=document.getElementById("name").value;
 
-  // 检查是否选择了已被预订的日期
-  for(let d of bookedDates){
-    if(d>=start && d<=end){
-      alert("选择的日期中有已被预订的日期，请重新选择！");
+  if(!room||!start||!end||!name){ alert("请填写完整信息"); return; }
+
+  let s=new Date(start), e=new Date(end);
+  while(s<=e){
+    if(isDateBooked(formatDate(s))){
+      alert("日期已被预约，请选择其他日期");
       return;
     }
+    s.setDate(s.getDate()+1);
   }
 
   try{
-    const res = await fetch(apiURL, {
+    const res = await fetch(apiURL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ room, start, end, people, name })
+      body:JSON.stringify({room,start,end,people,name})
     });
     const result = await res.json();
-    if(result.success || result.message){
-      document.getElementById("result").innerText = "预订成功！";
-      // 重新拉取已预约日期
-      fetchBookedDates();
-    } else {
-      document.getElementById("result").innerText = "提交失败";
+    if(result.message){
+      document.getElementById("result").innerText="预订成功！";
+      loadBookedData();
+    }else if(result.error){
+      alert("提交失败：" + result.error);
+    }else{
+      alert("提交失败");
     }
-  }catch(e){
-    console.error(e);
-    alert("提交失败，请重试");
-  }
+  }catch(e){console.error(e); alert("提交失败");}
 }
 </script>
 </body>
