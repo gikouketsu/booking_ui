@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>房间预订</title>
+<style>
+  body { font-family: Arial; background:#f5f5f5; padding:20px; }
+  .container { max-width:420px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.15); }
+  h2 { text-align:center; margin-bottom:20px; }
+  .form-group { margin-bottom:15px; }
+  label { display:block; margin-bottom:6px; font-weight:bold; }
+  select,input { width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px; }
+  button { width:100%; padding:10px; border:none; background:#4CAF50; color:white; font-size:16px; border-radius:6px; cursor:pointer; }
+  button:hover { background:#45a049; }
+  #result { margin-top:15px; text-align:center; font-weight:bold; color:#2e7d32; }
+  #roomPreview { margin-top:10px; text-align:center; display:none; }
+  #roomPreview img { width:100%; max-width:360px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>房间预订</h2>
+  <div class="form-group">
+    <label for="room">房间</label>
+    <select id="room" onchange="updateRoomImage()">
+      <option value="">请选择房间</option>
+      <option value="1001">1001号</option>
+      <option value="1002">1002号</option>
+      <option value="1003">1003号</option>
+      <option value="1004">1004号</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label><input type="checkbox" id="showImage" onchange="toggleRoomImage()"> 查看房间图片</label>
+  </div>
+
+  <div id="roomPreview">
+    <p>房间图片预览</p>
+    <img id="roomImage" src="" alt="房间图片">
+  </div>
+
+  <div class="form-group">
+    <label for="checkin">入住日期</label>
+    <input type="date" id="checkin">
+  </div>
+
+  <div class="form-group">
+    <label for="checkout">退房日期</label>
+    <input type="date" id="checkout">
+  </div>
+
+  <div class="form-group">
+    <label for="people">人数</label>
+    <select id="people">
+      <option value="1">1人</option>
+      <option value="2">2人</option>
+      <option value="3">3人</option>
+      <option value="4">4人</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="name">姓名</label>
+    <input type="text" id="name" placeholder="请输入姓名">
+  </div>
+
+  <button onclick="submitBooking()">提交订单</button>
+  <div id="result"></div>
+</div>
+
+<script>
+const apiURL = "https://orange-silence-6c7f.weizijie1218.workers.dev";  // Worker URL
+const roomImages = {
+  "1001":"https://你的域名/images/1001.jpg",
+  "1002":"https://你的域名/images/1002.jpg",
+  "1003":"https://你的域名/images/1003.jpg",
+  "1004":"https://你的域名/images/1004.jpg"
+};
+
+function updateRoomImage() {
+  const room = document.getElementById("room").value;
+  document.getElementById("roomImage").src = roomImages[room] || "";
+}
+
+function toggleRoomImage() {
+  const preview = document.getElementById("roomPreview");
+  preview.style.display = document.getElementById("showImage").checked ? "block" : "none";
+  updateRoomImage();
+}
+
+function submitBooking() {
+  const data = {
+    room: document.getElementById("room").value,
+    checkin: document.getElementById("checkin").value,
+    checkout: document.getElementById("checkout").value,
+    people: document.getElementById("people").value,
+    name: document.getElementById("name").value
+  };
+
+  if(!data.room || !data.checkin || !data.checkout || !data.name){
+    alert("请填写完整信息！");
+    return;
+  }
+
+  fetch(apiURL, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(data)
+  })
+  .then(r=>r.text())
+  .then(t=>{ document.getElementById("result").innerText="预订成功！" })
+  .catch(e=>{ console.error(e); alert("提交失败") });
+}
+</script>
+</body>
+</html>
