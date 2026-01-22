@@ -313,7 +313,6 @@ function submitBooking() {
 
 
 
-
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -342,10 +341,10 @@ button:hover { background:#45a049;}
     <label for="room">房间</label>
     <select id="room" onchange="loadBookings()">
       <option value="">请选择房间</option>
-      <option value="1001">1001</option>
-      <option value="1002">1002</option>
-      <option value="1003">1003</option>
-      <option value="1004">1004</option>
+      <option value="1001号">1001号</option>
+      <option value="1002号">1002号</option>
+      <option value="1003号">1003号</option>
+      <option value="1004号">1004号</option>
     </select>
   </div>
 
@@ -381,7 +380,7 @@ button:hover { background:#45a049;}
 </div>
 
 <script>
-const googleSheetURL = "https://script.google.com/macros/s/AKfycbyws-4cceioLQ3VNzVmxpMa9PwiL69kJJh5VwZxhYHKXG_CNDKlJWCiLVOsur8HA0Av5g/exec"; // 替换成你的 Apps Script Web App URL
+const googleSheetURL = "https://script.google.com/macros/s/AKfycbw1aUJ0eYPzn762eLW4ZVdNJg-Etj96IXEcQAKpu5fTvMqrrhd0k55Q3uu6xqBxa0135w/exec"; // 替换成你的 Apps Script Web App URL
 
 // 提交订单
 async function submitBooking(){
@@ -426,8 +425,9 @@ async function loadBookings(){
   try{
     const res = await fetch(googleSheetURL);
     const bookings = await res.json();
-    const roomKey = room.toString(); // 对应doGet里 key
-    if(!bookings[roomKey]) return;
+    
+    const roomKey = room.replace("号",""); // 去掉“号”，和 doGet 对应
+    if(!bookings[roomKey]) return; // 防止 undefined
 
     bookings[roomKey].forEach(b=>{
       const start = new Date(b.start);
