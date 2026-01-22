@@ -64,22 +64,15 @@ th{background:#eee}
 <h3>房间已预订记录</h3>
 <table id="bookingTable">
 <tr>
-<th>提交时间</th>
-<th>房间</th>
-<th>入住日期</th>
-<th>退房日期</th>
-<th>天数</th>
-<th>人数</th>
-<th>日价</th>
-<th>总价</th>
-<th>姓名</th>
+<th>提交时间</th><th>房间</th><th>入住日期</th><th>退房日期</th>
+<th>天数</th><th>人数</th><th>日价</th><th>总价</th><th>姓名</th>
 </tr>
 </table>
 
 </div>
 
 <script>
-const apiURL = "https://shrill-unit-bc8c.weizijie1218.workers.dev/";
+const apiURL = "https://script.google.com/macros/s/AKfycbxv-dLcCnegusqGunPRiLz2jdX-VRfTlJX37RwPut8SNKi00kZ411H07YDJyt_Kgr4bJA/exec"; // 替换成你的 Web 应用 URL
 let bookedDates = [];
 
 function formatDate(d){return d.toISOString().slice(0,10)}
@@ -87,41 +80,20 @@ function formatDate(d){return d.toISOString().slice(0,10)}
 async function loadBookedData(){
   const room = document.getElementById("room").value;
   if(!room) return;
-  const res = await fetch(apiURL);
+  const res = await fetch(apiURL + "?room=" + room);
   const data = await res.json();
-  const arr = data[room.replace("号","")] || [];
-
-  bookedDates = [];
+  bookedDates = data.bookedDates || [];
   const table = document.getElementById("bookingTable");
   table.innerHTML = `<tr>
 <th>提交时间</th><th>房间</th><th>入住日期</th><th>退房日期</th>
 <th>天数</th><th>人数</th><th>日价</th><th>总价</th><th>姓名</th>
 </tr>`;
-
-  arr.forEach(item=>{
-    let s=new Date(item.start), e=new Date(item.end);
-    let days = Math.ceil((e-s)/(1000*60*60*24));
-    if(days <= 0) days=1;
-
-    // 计算日价
-    let price=300;
-    if(days>=30) price=253;
-    else if(days>=7) price=265;
-    else if(days>=3) price=275;
-    let total = days*price;
-
-    // 填充 bookedDates
-    while(s<=e){
-      bookedDates.push(formatDate(s));
-      s.setDate(s.getDate()+1);
-    }
-
-    // 填充表格
+  
+  (data.bookings || []).forEach(item=>{
     const tr = document.createElement("tr");
-    const now = formatDate(new Date());
-    tr.innerHTML=`<td>${now}</td>
-<td>${item.room}</td><td>${item.start}</td><td>${item.end}</td>
-<td>${days}</td><td>${item.people}</td><td>${price}</td><td>${total}</td><td>${item.name}</td>`;
+    tr.innerHTML = `<td>${new Date(item[0]).toLocaleString()}</td>
+<td>${item[1]}</td><td>${item[2]}</td><td>${item[3]}</td>
+<td>${item[4]}</td><td>${item[5]}</td><td>${item[6]}</td><td>${item[7]}</td><td>${item[8]}</td>`;
     table.appendChild(tr);
   });
 }
@@ -153,13 +125,11 @@ async function submitBooking(){
       body:JSON.stringify({room,start,end,people,name})
     });
     const result = await res.json();
-    if(result.message){
+    if(result.success){
       document.getElementById("result").innerText="预订成功！";
       loadBookedData();
-    }else if(result.error){
-      alert("提交失败：" + result.error);
     }else{
-      alert("提交失败");
+      alert("提交失败：" + (result.msg || "未知错误"));
     }
   }catch(e){console.error(e); alert("提交失败");}
 }
